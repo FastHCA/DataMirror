@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "user_id": 1,
+        "product": "橡膠果實",
+        "quantity": 3
+    },
+    {
+        "id": 2,
+        "user_id": 2,
+        "product": "三刀流刀法",
+        "quantity": 2
+    },
+    {
+        "id": 3,
+        "user_id": 3,
+        "product": "天候棒",
+        "quantity": 1
+    },
+    {
+        "id": 4,
+        "user_id": 1,
+        "product": "恢復果實",
+        "quantity": 5
+    },
+    {
+        "id": 5,
+        "user_id": 2,
+        "product": "霸氣",
+        "quantity": 1
+    },
+    {
+        "id": 6,
+        "user_id": 3,
+        "product": "懸賞海報",
+        "quantity": 10
+    },
+    {
+        "id": 7,
+        "user_id": 3,
+        "product": "海賊船",
+        "quantity": 1
+    },
+    {
+        "id": 8,
+        "user_id": 1,
+        "product": "惡魔果實",
+        "quantity": 2
+    },
+    {
+        "id": 9,
+        "user_id": 3,
+        "product": "航海日誌",
+        "quantity": 3
+    },
+    {
+        "id": 10,
+        "user_id": 3,
+        "product": "船員招募廣告",
+        "quantity": 5
+    }
+]  
