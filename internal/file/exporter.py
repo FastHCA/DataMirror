@@ -52,9 +52,9 @@ class FileExporter(ExporterAbstract):
             file_path = os.path.join(self.target_json_data_directory, file_name)
             table_name = os.path.splitext(file_name)[0][3:]
             if os.path.isfile(file_path):
-                with open(file_path, 'r') as file:
+                with open(file_path, mode='r', encoding='utf-8') as file:
                     content = file.read()
                 callback({'table_name': table_name, 'file_name': file_name, 'content': content})
-                
+
     def finish(self):
         pass
