@@ -1,14 +1,9 @@
-import os
 import json
-from internal import constants
 from datetime import datetime
-from sqlalchemy import create_engine, MetaData, Table, inspect, text
+from sqlalchemy import create_engine, MetaData,  inspect, text
 from sqlalchemy.schema import CreateTable
-from sqlalchemy import Index
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy_utils import database_exists
 from internal.exporter_abstract import ExporterAbstract
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -27,6 +22,21 @@ class PostgreSQLExporter(ExporterAbstract):
             exit()
         self.engine = engine
         self.conn = engine.connect()
+        self.inspector = inspect(self.engine) # 建立 Inspector，用於取得資料庫結構資訊
+
+    # 遞迴處理，按照依賴順序加入
+    def process_dependency_table(self, table_name, dependency_order):
+        # 取得表的依賴關係
+        foreign_keys = self.inspector.get_foreign_keys(table_name)
+
+        # 遞迴處理每個依賴
+        for foreign_key in foreign_keys:
+            dependent_table = foreign_key['referred_table']
+            if dependent_table not in dependency_order:
+                self.process_dependency_table(dependent_table)
+
+        # 將當前的表加到列表中
+        dependency_order.append(table_name)
 
     def export(self, writer):
         self.table_exporter(writer.table_writer)
@@ -39,34 +49,18 @@ class PostgreSQLExporter(ExporterAbstract):
     def table_exporter(self, callback):
         metadata = MetaData()
         metadata.reflect(bind=self.engine)
-
-        # 建立 Inspector，用於取得資料庫結構資訊
         inspector = inspect(self.engine)
 
         # 取得資料庫中的所有表格
-        tables = inspector.get_table_names()
+        tables = self.inspector.get_table_names()
 
         # 空的列表存依賴順序
         dependency_order = []
 
-        # 遞迴處理，按照依賴順序加入
-        def process_table(table_name):
-            # 取得表的依賴關係
-            foreign_keys = inspector.get_foreign_keys(table_name)
-            
-            # 遞迴處理每個依賴
-            for foreign_key in foreign_keys:
-                dependent_table = foreign_key['referred_table']
-                if dependent_table not in dependency_order:
-                    process_table(dependent_table)
-            
-            # 將當前的表加到列表中
-            dependency_order.append(table_name)
-
         # 遞迴處理，按照依賴順序加到列表中
         for table in tables:
             if table not in dependency_order:
-                process_table(table)
+                self.process_dependency_table(table, dependency_order)
 
         for i, table_name in enumerate(dependency_order):
             content = ""
@@ -114,7 +108,7 @@ class PostgreSQLExporter(ExporterAbstract):
             WHERE tgrelid IN (
                 SELECT oid
                 FROM pg_class
-                WHERE relkind = 'r' AND relname = 'user' -- Replace 'user' with your table name
+                WHERE relkind = 'r'
             )
             AND tgname NOT LIKE 'RI_ConstraintTrigger%%'
         """)
@@ -134,8 +128,19 @@ class PostgreSQLExporter(ExporterAbstract):
         metadata = MetaData()
         metadata.reflect(bind=self.engine)
 
-        for table_name in metadata.tables.keys():
-            table = Table(table_name, metadata, autoload=True)
+        # 取得資料庫中的所有表格
+        tables = self.inspector.get_table_names()
+
+        # 空的列表存依賴順序
+        dependency_order = []
+
+        # 遞迴處理，按照依賴順序加到列表中
+        for table in tables:
+            if table not in dependency_order:
+                self.process_dependency_table(table, dependency_order)
+
+        for i, table_name in enumerate(dependency_order):
+            table = metadata.tables[table_name]
             rows = session.query(table).all()
 
             data = []
@@ -143,10 +148,9 @@ class PostgreSQLExporter(ExporterAbstract):
             for row in rows:
                 data.append(dict(row._asdict()))
 
-            json_data = json.dumps(data, indent=4, cls=CustomJSONEncoder)
+            json_data = json.dumps(data, indent=4, cls=CustomJSONEncoder, ensure_ascii=False)
 
-            # FIXME 表有使用 FK，所以寫入表資料的順序也是有關係的。
-            file_name = f"{table_name}.json"
+            file_name = f'{i + 1:02d}_{table_name}.json'
             content += json_data
 
             callback({'table_name': table_name, 'file_name': file_name, 'content': content})

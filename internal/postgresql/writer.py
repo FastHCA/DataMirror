@@ -1,10 +1,7 @@
-import os
 import json
-from internal import constants
 from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from internal.writer_abstract import WriterAbstract
 
 class PostgreSQLWriter(WriterAbstract):
