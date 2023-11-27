@@ -23,35 +23,35 @@ class FileWriter(WriterAbstract):
         file_name = data['file_name']
         content   = data['content']
         file_path = os.path.join(self.target_table_directory, file_name)
-        with open(file_path, 'w') as file:
+        with open(file_path, mode='w', encoding='utf-8') as file:
             file.write(content)
 
     def sp_writer(self, data):
         file_name = data['file_name']
         content   = data['content']
         file_path = os.path.join(self.target_stored_procedures_directory, file_name)
-        with open(file_path, 'w') as file:
+        with open(file_path, mode='w', encoding='utf-8') as file:
             file.write(content)
 
     def trigger_writer(self, data):
         file_name = data['file_name']
         content   = data['content']
         file_path = os.path.join(self.target_trigger_directory, file_name)
-        with open(file_path, 'w') as file:
+        with open(file_path, mode='w', encoding='utf-8') as file:
             file.write(content)
 
     def data_writer(self, data):
         file_name = data['file_name']
         content   = data['content']
         file_path = os.path.join(self.target_json_data_directory, file_name)
-        with open(file_path, 'w') as file:
+        with open(file_path, mode='w', encoding='utf-8') as file:
             file.write(content)
 
     def manifest_writer(self, driver):
         file_path = os.path.join(self.target_directory, constants.MANIFEST_FILE)
         config = configparser.ConfigParser()
         config['default'] = {'driver': driver}
-        with open(file_path, 'w') as file:
+        with open(file_path, mode='w', encoding='utf-8') as file:
             config.write(file)
 
     def finish(self):
