@@ -4,7 +4,10 @@ from sqlalchemy import create_engine, MetaData,  inspect, text
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists
+
+from internal.constants import DatabaseNotFoundError
 from internal.exporter_abstract import ExporterAbstract
+
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -14,17 +17,17 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 class PostgreSQLExporter(ExporterAbstract):
     def __init__(self, db_url):
-    #def __init__(self, username, password, host, port, database_name):
-        #engine = create_engine(f'postgresql://{username}:{password}@{host}:{port}/{database_name}')
         engine = create_engine(db_url)
-        if not database_exists(engine.url):
-            print('資料庫不存在')
-            exit()
         self.engine = engine
-        self.conn = engine.connect()
-        self.inspector = inspect(self.engine) # 建立 Inspector，用於取得資料庫結構資訊
+        self.validate()
 
-    # 遞迴處理，按照依賴順序加入
+        self.conn = engine.connect()
+        self.inspector = inspect(self.engine)
+
+    def validate(self):
+        if not database_exists(self.engine.url):
+            raise DatabaseNotFoundError(f'Error: {self.engine.url.database} does not exist.')
+
     def process_dependency_table(self, table_name, dependency_order):
         # 取得表的依賴關係
         foreign_keys = self.inspector.get_foreign_keys(table_name)
@@ -33,7 +36,7 @@ class PostgreSQLExporter(ExporterAbstract):
         for foreign_key in foreign_keys:
             dependent_table = foreign_key['referred_table']
             if dependent_table not in dependency_order:
-                self.process_dependency_table(dependent_table)
+                self.process_dependency_table(dependent_table, dependency_order)
 
         # 將當前的表加到列表中
         dependency_order.append(table_name)
@@ -43,13 +46,13 @@ class PostgreSQLExporter(ExporterAbstract):
         self.sp_exporter(writer.sp_writer)
         self.trigger_exporter(writer.trigger_writer)
         self.data_exporter(writer.data_writer)
+        self.manifest_exporter(writer.manifest_writer)
         self.finish()
         writer.finish()
 
     def table_exporter(self, callback):
         metadata = MetaData()
         metadata.reflect(bind=self.engine)
-        inspector = inspect(self.engine)
 
         # 取得資料庫中的所有表格
         tables = self.inspector.get_table_names()
@@ -156,6 +159,9 @@ class PostgreSQLExporter(ExporterAbstract):
             callback({'table_name': table_name, 'file_name': file_name, 'content': content})
 
         session.close()
+
+    def manifest_exporter(self, callback):
+        callback('postgresql')
 
     def finish(self):
         self.conn.close()

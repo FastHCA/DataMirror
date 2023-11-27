@@ -1,3 +1,5 @@
+import configparser
+import json
 import os
 from internal import constants
 from internal.util import Util
@@ -44,6 +46,13 @@ class FileWriter(WriterAbstract):
         file_path = os.path.join(self.target_json_data_directory, file_name)
         with open(file_path, 'w') as file:
             file.write(content)
+
+    def manifest_writer(self, driver):
+        file_path = os.path.join(self.target_directory, constants.MANIFEST_FILE)
+        config = configparser.ConfigParser()
+        config['default'] = {'driver': driver}
+        with open(file_path, 'w') as file:
+            config.write(file)
 
     def finish(self):
         pass

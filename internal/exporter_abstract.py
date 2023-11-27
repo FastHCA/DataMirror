@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class ExporterAbstract(ABC):
     @abstractmethod
     def export(self, writer):
@@ -22,5 +23,9 @@ class ExporterAbstract(ABC):
         pass
 
     @abstractmethod
-    def finish(self, callback):
+    def manifest_exporter(self, callback):
+        pass
+
+    @abstractmethod
+    def finish(self):
         pass

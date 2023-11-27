@@ -1,8 +1,8 @@
 import os
-import re
 
 from sqlalchemy.engine.url import _parse_url
 from sqlalchemy.exc import ArgumentError
+
 
 class Util:
     @staticmethod
@@ -17,18 +17,11 @@ class Util:
             os.makedirs(directory)
 
     @staticmethod
-    def check_type(input_str):
+    def get_driver_name(input_str):
         try:
             dsn = _parse_url(input_str)
-            return "DSN"
+            return dsn.drivername
         except ArgumentError as e:
             pass
 
-        if os.path.isdir(input_str):
-            return "FILE"
-
-        return "UNKNOWN"
-
-    @staticmethod
-    def extract_db_name(connection_string):
-        return connection_string.split("://")[0]
+        return "file"

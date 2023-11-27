@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class WriterAbstract(ABC):
     @abstractmethod
     def table_writer(self, data):
@@ -18,5 +19,9 @@ class WriterAbstract(ABC):
         pass
 
     @abstractmethod
-    def finish(self, callback):
+    def manifest_writer(self, driver):
+        pass
+
+    @abstractmethod
+    def finish(self):
         pass

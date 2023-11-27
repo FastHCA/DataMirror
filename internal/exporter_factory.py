@@ -3,19 +3,15 @@ from internal import constants
 from internal.file.exporter import FileExporter
 from internal.postgresql.exporter import PostgreSQLExporter
 
+
 class ExporterFactory:
     @staticmethod
     def create_exporter(source):
-        source_type = Util.check_type(source)
-        print(f'INFO: source type is {source_type}')
-        if source_type == constants.FILE_TYPE:
+        driver_name = Util.get_driver_name(source)
+        print(f'INFO: source driver is {driver_name}')
+        if driver_name == constants.FILE_TYPE:
             return FileExporter(source)
-        elif source_type == constants.DSN_TYPE:
-            db_name = Util.extract_db_name(source)
-            print(f'INFO: source database type is {db_name}')
-            if db_name == constants.DATABASE_POSTGRESQL:
-                return PostgreSQLExporter(source)
-            else:
-                raise ValueError("source connection type unsupported")
+        elif driver_name == constants.DRIVER_POSTGRESQL:
+            return PostgreSQLExporter(source)
         else:
-            raise ValueError("Invalid source type")
+            raise ValueError(f'unsupported source driver {driver_name}')

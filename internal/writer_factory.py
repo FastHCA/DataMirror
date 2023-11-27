@@ -3,19 +3,15 @@ from internal import constants
 from internal.file.writer import FileWriter
 from internal.postgresql.writer import PostgreSQLWriter
 
+
 class WriterFactory:
     @staticmethod
-    def create_writer(target):
-        target_type = Util.check_type(target)
-        print(f'INFO: target type is {target_type}')
-        if target_type == constants.FILE_TYPE:
+    def create_writer(target, recreate_target):
+        driver_name = Util.get_driver_name(target)
+        print(f'INFO: target type is {driver_name}')
+        if driver_name == constants.FILE_TYPE:
             return FileWriter(target)
-        elif target_type == constants.DSN_TYPE:
-            db_name = Util.extract_db_name(target)
-            print(f'INFO: target database type is {db_name}')
-            if db_name == constants.DATABASE_POSTGRESQL:
-                return PostgreSQLWriter(target)
-            else:
-                raise ValueError("target connection type unsupported")
+        elif driver_name == constants.DRIVER_POSTGRESQL:
+            return PostgreSQLWriter(target, recreate_target)
         else:
-            raise ValueError("Invalid target type")
+            raise ValueError(f'unsupported target driver {driver_name}')

@@ -1,21 +1,20 @@
 import json
 from sqlalchemy import create_engine, MetaData, text
-from sqlalchemy_utils import database_exists, create_database, drop_database
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import database_exists, create_database, drop_database
+
 from internal.writer_abstract import WriterAbstract
 
+
 class PostgreSQLWriter(WriterAbstract):
-    def __init__(self, db_url):
-    #def __init__(self, username, password, host, port, database_name):
-        #engine = create_engine(f'postgresql://{username}:{password}@{host}:{port}/{database_name}')
+    def __init__(self, db_url, recreate_target):
         engine = create_engine(db_url)
-        # 資料庫不存在則建立
+
         if not database_exists(engine.url):
             create_database(engine.url)
-        # FIXME add options on/off 存在則刪除並重新建立
-        # else:
-        #     drop_database(engine.url)
-        #     create_database(engine.url)
+        elif recreate_target:
+            drop_database(engine.url)
+            create_database(engine.url)
 
         self.engine = engine
         self.conn = engine.connect()
@@ -66,6 +65,9 @@ class PostgreSQLWriter(WriterAbstract):
             for row in json_data:
                 self.session.execute(table.insert().values(row))
             self.session.commit()
+
+    def manifest_writer(self, driver):
+        pass
 
     def finish(self):
         self.conn.close()
